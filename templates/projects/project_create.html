@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Новий проєкт — MusicStudio{% endblock %}
+
+{% block content %}
+<div class="page-container page-container--narrow">
+    <div class="page-header">
+        <a href="{% url 'projects:list' %}" class="back-link">&#8592; Назад до проєктів</a>
+        <h1 class="page-title">Новий проєкт</h1>
+    </div>
+
+    <div class="card">
+        <form method="post" class="project-form">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group {% if field.errors %}form-group--error{% endif %}">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <span class="form-hint">{{ field.help_text }}</span>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <span class="form-error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn--primary">Створити проєкт</button>
+                <a href="{% url 'projects:list' %}" class="btn btn--ghost">Скасувати</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

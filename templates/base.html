@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MusicStudio{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar__brand">
+            <a href="{% url 'projects:list' %}">
+                <span class="navbar__logo">&#9834;</span> MusicStudio
+            </a>
+        </div>
+        <div class="navbar__links">
+            {% if user.is_authenticated %}
+                <a href="{% url 'projects:list' %}" class="nav-link">Проєкти</a>
+                <a href="{% url 'projects:create' %}" class="nav-link">+ Новий</a>
+                <a href="{% url 'accounts:profile' %}" class="nav-link nav-link--user">
+                    {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="avatar" class="nav-avatar">
+                    {% endif %}
+                    {{ user.username }}
+                </a>
+                <a href="{% url 'accounts:logout' %}" class="nav-link nav-link--logout">Вийти</a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="nav-link">Увійти</a>
+                <a href="{% url 'accounts:register' %}" class="nav-link nav-link--accent">Реєстрація</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% if messages %}
+            <div class="messages">
+                {% for msg in messages %}
+                    <div class="message message--{{ msg.tags }}">
+                        {{ msg }}
+                        <button class="message__close" onclick="this.parentElement.remove()">&#10005;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

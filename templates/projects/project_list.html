@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Мої проєкти — MusicStudio{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1 class="page-title">Мої проєкти</h1>
+        <a href="{% url 'projects:create' %}" class="btn btn--primary">+ Новий проєкт</a>
+    </div>
+
+    {% if projects %}
+        <div class="projects-grid">
+            {% for project in projects %}
+                <article class="project-card">
+                    <div class="project-card__header">
+                        <h2 class="project-card__title">
+                            <a href="{% url 'projects:detail' project.pk %}">{{ project.title }}</a>
+                        </h2>
+                        <button
+                            class="btn btn--icon btn--danger"
+                            data-delete-url="{% url 'projects:delete' project.pk %}"
+                            title="Видалити проєкт"
+                            onclick="deleteProject(this)"
+                        >&#10005;</button>
+                    </div>
+                    <div class="project-card__meta">
+                        <span class="badge">{{ project.tempo }} BPM</span>
+                        <span class="badge badge--accent">{{ project.key }}</span>
+                        <span class="badge badge--muted">{{ project.tracks.count }} доріжок</span>
+                    </div>
+                    <p class="project-card__date">
+                        Оновлено: {{ project.updated_at|date:"d.m.Y H:i" }}
+                    </p>
+                    <a href="{% url 'projects:detail' project.pk %}" class="btn btn--ghost btn--full">
+                        Відкрити редактор
+                    </a>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state__icon">&#9835;</div>
+            <h2 class="empty-state__title">Ще немає проєктів</h2>
+            <p class="empty-state__text">Створіть свій перший музичний проєкт</p>
+            <a href="{% url 'projects:create' %}" class="btn btn--primary">Створити проєкт</a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+async function deleteProject(btn) {
+    if (!confirm('Видалити проєкт? Це незворотня дія.')) return;
+    const url = btn.dataset.deleteUrl;
+    const resp = await fetch(url, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    });
+    if (resp.ok) {
+        btn.closest('.project-card').remove();
+    }
+}
+</script>
+{% endblock %}

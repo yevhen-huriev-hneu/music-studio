@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem c:\\\\music_project -Recurse -Depth 3 | Where-Object { -not $_.PSIsContainer } | ForEach-Object { $_.FullName.Replace\\(\"c:\\\\music_project\\\\\", \"\"\\) })"
+    ]
+  }
+}

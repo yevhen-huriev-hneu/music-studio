@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Вхід — MusicStudio{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-card__header">
+            <span class="auth-card__icon">&#9834;</span>
+            <h1 class="auth-card__title">Вхід до MusicStudio</h1>
+            <p class="auth-card__subtitle">Раді бачити вас знову</p>
+        </div>
+
+        <form method="post" class="auth-form" novalidate>
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="id_username">Ім'я користувача</label>
+                <input type="text" id="id_username" name="username" class="form-input" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="id_password">Пароль</label>
+                <input type="password" id="id_password" name="password" class="form-input" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn--primary btn--full">Увійти</button>
+        </form>
+
+        <p class="auth-card__footer">
+            Ще немає акаунту? <a href="{% url 'accounts:register' %}">Зареєструватись</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

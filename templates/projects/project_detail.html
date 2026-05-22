@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ project.title }} — MusicStudio{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/editor.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="editor-layout">
+
+    <!-- Ліва панель: параметри проєкту + завантаження -->
+    <aside class="editor-sidebar">
+        <div class="sidebar-section">
+            <h2 class="sidebar-title">{{ project.title }}</h2>
+            <form method="post" class="sidebar-form">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group-compact">
+                        <label class="form-label-sm">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn--primary btn--sm btn--full">Зберегти</button>
+            </form>
+        </div>
+
+        <div class="sidebar-section">
+            <h3 class="sidebar-subtitle">Завантажити доріжку</h3>
+            <div class="upload-area" id="upload-area">
+                <input type="file" id="track-file" accept=".mp3,.wav,.flac" class="upload-input">
+                <input type="text" id="track-title" placeholder="Назва доріжки" class="form-input form-input--sm">
+                <label for="track-file" class="btn btn--ghost btn--full">&#8593; Обрати файл</label>
+                <p class="upload-hint" id="file-name">MP3, WAV, FLAC — до 50 МБ</p>
+                <button id="upload-btn" class="btn btn--primary btn--full" style="display:none">Завантажити</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Центральна панель: доріжки + редактор -->
+    <main class="editor-main">
+        <div class="editor-toolbar">
+            <button id="play-all-btn" class="btn btn--accent" title="Відтворити мікс">&#9654; Play</button>
+            <button id="stop-all-btn" class="btn btn--ghost" title="Зупинити">&#9632; Stop</button>
+            <span id="global-seek-time" class="seek-time">0:00</span>
+            <input type="range" id="global-seek-slider" class="global-seek-slider" min="0" max="600" step="0.1" value="0">
+            <span id="global-seek-dur" class="seek-duration">0:00</span>
+            <select id="export-format" class="speed-select" title="Формат експорту">
+                <option value="wav">WAV</option>
+                <option value="mp3">MP3</option>
+            </select>
+            <button id="export-btn" class="btn btn--ghost" title="Експортувати">&#8595; Експортувати</button>
+            <span id="playback-time" class="time-display">0:00</span>
+        </div>
+
+        <div class="tracks-container" id="tracks-container">
+            {% if not tracks %}
+                <div class="empty-tracks" id="empty-tracks">
+                    <p>Додайте першу аудіодоріжку зліва</p>
+                </div>
+            {% endif %}
+            {% for track in tracks %}
+                <div class="track-item" data-track-id="{{ track.id }}" data-src="{{ track.file.url }}">
+                    <div class="track-header">
+                        <span class="track-title">{{ track.title }}</span>
+                        <div class="track-controls">
+                            <label class="track-volume-label">Гучність</label>
+                            <input type="range" class="volume-slider" min="0" max="1" step="0.01"
+                                   value="{{ track.volume }}" data-track-id="{{ track.id }}">
+                            <button class="btn btn--icon track-play-btn" data-track-id="{{ track.id }}" title="Грати">&#9654;</button>
+                            <button class="btn btn--icon track-mute-btn" data-track-id="{{ track.id }}" title="Приглушити">M</button>
+                            <button class="btn btn--icon track-solo-btn" data-track-id="{{ track.id }}" title="Соло">S</button>
+                            <button class="btn btn--icon btn--danger track-delete-btn"
+                                    data-track-id="{{ track.id }}" title="Видалити доріжку">&#10005;</button>
+                        </div>
+                    </div>
+                    <div class="effects-bar">
+                        <label class="effect-toggle">
+                            <input type="checkbox" class="effect-cb" data-effect="reverb" data-track-id="{{ track.id }}">
+                            Reverb
+                        </label>
+                        <label class="effect-toggle">
+                            <input type="checkbox" class="effect-cb" data-effect="bass" data-track-id="{{ track.id }}">
+                            Bass Boost
+                        </label>
+                        <label class="effect-toggle">
+                            <input type="checkbox" class="effect-cb" data-effect="compressor" data-track-id="{{ track.id }}">
+                            Compressor
+                        </label>
+                        <label class="effect-toggle">
+                            <input type="checkbox" class="effect-cb" data-effect="delay" data-track-id="{{ track.id }}">
+                            Delay
+                        </label>
+                        <label class="effect-toggle">
+                            <input type="checkbox" class="effect-cb" data-effect="eq" data-track-id="{{ track.id }}">
+                            EQ
+                        </label>
+                        <label class="effect-toggle">
+                            Швидкість
+                            <select class="speed-select" data-track-id="{{ track.id }}">
+                                <option value="0.5">0.5×</option>
+                                <option value="0.75">0.75×</option>
+                                <option value="1" selected>1×</option>
+                                <option value="1.25">1.25×</option>
+                                <option value="1.5">1.5×</option>
+                                <option value="2">2×</option>
+                            </select>
+                        </label>
+                        <button class="btn btn--xs btn--ghost trim-btn" data-track-id="{{ track.id }}">Trim</button>
+                    </div>
+                    <div class="effect-params" id="fx-{{ track.id }}-reverb" style="display:none">
+                        <span class="fx-label">Затухання</span>
+                        <input type="range" class="fx-slider" data-effect="reverb" data-param="decay" data-track-id="{{ track.id }}" min="0.5" max="5" step="0.1" value="2">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-reverb-decay">2.00s</span>
+                        <span class="fx-label">Wet</span>
+                        <input type="range" class="fx-slider" data-effect="reverb" data-param="wet" data-track-id="{{ track.id }}" min="0" max="1" step="0.05" value="0.5">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-reverb-wet">50%</span>
+                    </div>
+                    <div class="effect-params" id="fx-{{ track.id }}-bass" style="display:none">
+                        <span class="fx-label">Підсилення</span>
+                        <input type="range" class="fx-slider" data-effect="bass" data-param="gain" data-track-id="{{ track.id }}" min="0" max="20" step="1" value="10">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-bass-gain">10dB</span>
+                        <span class="fx-label">Частота</span>
+                        <input type="range" class="fx-slider" data-effect="bass" data-param="frequency" data-track-id="{{ track.id }}" min="60" max="500" step="10" value="200">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-bass-frequency">200Hz</span>
+                    </div>
+                    <div class="effect-params" id="fx-{{ track.id }}-compressor" style="display:none">
+                        <span class="fx-label">Поріг</span>
+                        <input type="range" class="fx-slider" data-effect="compressor" data-param="threshold" data-track-id="{{ track.id }}" min="-60" max="0" step="1" value="-24">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-compressor-threshold">-24dB</span>
+                        <span class="fx-label">Стиснення</span>
+                        <input type="range" class="fx-slider" data-effect="compressor" data-param="ratio" data-track-id="{{ track.id }}" min="1" max="20" step="1" value="4">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-compressor-ratio">4:1</span>
+                    </div>
+                    <div class="effect-params" id="fx-{{ track.id }}-delay" style="display:none">
+                        <span class="fx-label">Час</span>
+                        <input type="range" class="fx-slider" data-effect="delay" data-param="time" data-track-id="{{ track.id }}" min="0.05" max="1" step="0.05" value="0.3">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-delay-time">0.30s</span>
+                        <span class="fx-label">Відлуння</span>
+                        <input type="range" class="fx-slider" data-effect="delay" data-param="feedback" data-track-id="{{ track.id }}" min="0" max="0.9" step="0.05" value="0.4">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-delay-feedback">40%</span>
+                    </div>
+                    <div class="effect-params" id="fx-{{ track.id }}-eq" style="display:none">
+                        <span class="fx-label">Низ</span>
+                        <input type="range" class="fx-slider" data-effect="eq" data-param="low" data-track-id="{{ track.id }}" min="-12" max="12" step="1" value="0">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-eq-low">0dB</span>
+                        <span class="fx-label">Середина</span>
+                        <input type="range" class="fx-slider" data-effect="eq" data-param="mid" data-track-id="{{ track.id }}" min="-12" max="12" step="1" value="0">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-eq-mid">0dB</span>
+                        <span class="fx-label">Верхи</span>
+                        <input type="range" class="fx-slider" data-effect="eq" data-param="high" data-track-id="{{ track.id }}" min="-12" max="12" step="1" value="0">
+                        <span class="fx-val" id="fx-val-{{ track.id }}-eq-high">0dB</span>
+                    </div>
+                    <canvas class="waveform-canvas" id="waveform-{{ track.id }}" width="800" height="80"></canvas>
+                    <div class="seek-bar">
+                        <span class="seek-time" id="seek-time-{{ track.id }}">0:00</span>
+                        <input type="range" class="seek-slider" id="seek-{{ track.id }}"
+                               data-track-id="{{ track.id }}" min="0" max="100" step="0.1" value="0">
+                        <span class="seek-duration" id="seek-dur-{{ track.id }}">0:00</span>
+                    </div>
+                    <div class="trim-controls" id="trim-{{ track.id }}" style="display:none">
+                        <label class="form-label-sm">Від (сек): <input type="number" class="trim-start" value="0" min="0" step="0.1" style="width:70px"></label>
+                        <label class="form-label-sm">До (сек): <input type="number" class="trim-end" value="10" min="0" step="0.1" style="width:70px"></label>
+                        <button class="btn btn--xs btn--accent apply-trim-btn" data-track-id="{{ track.id }}">Застосувати</button>
+                        <button class="btn btn--xs btn--ghost reset-trim-btn" data-track-id="{{ track.id }}">&#8635; Скинути</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Права панель: AI чат -->
+    <aside class="chat-panel">
+        <div class="chat-header">
+            <span class="chat-header__icon">&#129302;</span>
+            <span class="chat-header__title">AI Асистент</span>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+            {% for msg in chat_messages %}
+                <div class="chat-message chat-message--{{ msg.role }}">
+                    <span class="chat-message__text">{{ msg.content }}</span>
+                    <span class="chat-message__time">{{ msg.created_at|date:"H:i" }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="chat-input-area">
+            <textarea
+                id="chat-input"
+                class="chat-input"
+                placeholder="Запитайте асистента..."
+                rows="2"
+            ></textarea>
+            <button id="chat-send-btn" class="btn btn--accent">Надіслати</button>
+        </div>
+        <div id="chat-typing" class="chat-typing" style="display:none">
+            <span></span><span></span><span></span>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const PROJECT_ID = {{ project.id }};
+    const CSRF_TOKEN = '{{ csrf_token }}';
+    const UPLOAD_URL = '/api/tracks/{{ project.id }}/upload/';
+    const CHAT_URL = '/api/chat/{{ project.id }}/';
+</script>
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+<script src="{% static 'js/audio_editor.js' %}?v=4"></script>
+<script src="{% static 'js/chat.js' %}"></script>
+{% endblock %}

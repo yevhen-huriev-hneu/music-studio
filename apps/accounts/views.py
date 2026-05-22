@@ -1,0 +1,66 @@
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .forms import RegisterForm, UserUpdateForm, ProfileUpdateForm
+
+
+def register_view(request):
+    if request.user.is_authenticated:
+        return redirect('projects:list')
+
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Реєстрацію успішно завершено!')
+            return redirect('projects:list')
+    else:
+        form = RegisterForm()
+
+    return render(request, 'accounts/register.html', {'form': form})
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('projects:list')
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            next_url = request.GET.get('next')
+            return redirect(next_url) if next_url else redirect('projects:list')
+        else:
+            messages.error(request, 'Невірне ім\'я користувача або пароль.')
+
+    return render(request, 'accounts/login.html')
+
+
+@login_required
+def logout_view(request):
+    logout(request)
+    return redirect('accounts:login')
+
+
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+        profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, 'Профіль успішно оновлено!')
+            return redirect('accounts:profile')
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        profile_form = ProfileUpdateForm(instance=request.user.profile)
+
+    return render(request, 'accounts/profile.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+    })

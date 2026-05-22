@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Профіль — MusicStudio{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1 class="page-title">Мій профіль</h1>
+    </div>
+
+    <div class="profile-card">
+        <div class="profile-card__avatar">
+            {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}" alt="Аватар" class="avatar avatar--large">
+            {% else %}
+                <div class="avatar avatar--large avatar--placeholder">
+                    {{ user.username|first|upper }}
+                </div>
+            {% endif %}
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="profile-form">
+            {% csrf_token %}
+            <h2 class="form-section-title">Основна інформація</h2>
+            {% for field in user_form %}
+                <div class="form-group {% if field.errors %}form-group--error{% endif %}">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <span class="form-error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <h2 class="form-section-title">Профіль</h2>
+            {% for field in profile_form %}
+                <div class="form-group {% if field.errors %}form-group--error{% endif %}">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <span class="form-error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn--primary">Зберегти зміни</button>
+                <a href="{% url 'projects:list' %}" class="btn btn--ghost">Скасувати</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
