@@ -73,8 +73,27 @@ document.querySelectorAll('.track-item').forEach(item => {
 });
 
 async function initTrack(trackId, src, container) {
-    const response = await fetch(src);
-    const arrayBuffer = await response.arrayBuffer();
+    const playBtn = container.querySelector('.track-play-btn');
+    if (playBtn) { playBtn.disabled = true; playBtn.textContent = '...'; }
+
+    let arrayBuffer = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const response = await fetch(src);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            arrayBuffer = await response.arrayBuffer();
+            break;
+        } catch (_err) {
+            if (attempt < 3) await new Promise(r => setTimeout(r, 2000));
+        }
+    }
+
+    if (!arrayBuffer) {
+        if (playBtn) { playBtn.disabled = false; playBtn.innerHTML = '&#9654;'; }
+        console.error(`Не вдалося завантажити аудіо для доріжки ${trackId} з ${src}`);
+        return;
+    }
+
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
     trackStates[trackId] = {
@@ -186,6 +205,7 @@ async function initTrack(trackId, src, container) {
         updateAllGains();
     });
 
+    if (playBtn) { playBtn.disabled = false; playBtn.innerHTML = '&#9654;'; }
     updateGlobalSeekMax();
 }
 
