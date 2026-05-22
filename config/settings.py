@@ -94,16 +94,6 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 STATICFILES_MANIFEST_STRICT = False
 
-import os, shutil
-static_path = BASE_DIR / 'static'
-print(f"DEBUG static contents: {list(os.listdir(static_path))}")
-for root, dirs, files in os.walk(BASE_DIR / 'static'):
-    for file in files:
-        print(f"DEBUG file: {os.path.join(root, file)}")
-
-staticfiles_dir = BASE_DIR / 'staticfiles'
-if staticfiles_dir.exists():
-    shutil.rmtree(staticfiles_dir)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
