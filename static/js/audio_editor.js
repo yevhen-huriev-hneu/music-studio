@@ -184,11 +184,11 @@ async function initTrack(trackId, src, container) {
     });
 
     // Per-track play/stop
-    container.querySelector('.track-play-btn')?.addEventListener('click', () => {
+    container.querySelector('.track-play-btn')?.addEventListener('click', async () => {
         if (state.playing) {
             stopTrack(trackId);
         } else {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
             playTrack(trackId);
         }
     });
@@ -275,6 +275,7 @@ function drawPlayhead(trackId, canvas, trimStart, trimEnd, duration) {
 
 function playTrack(trackId) {
     const state = trackStates[trackId];
+    console.log(`[play] id=${trackId} state=${state ? 'ok' : 'null'} ctx=${audioCtx.state} buffer=${state?.buffer ? 'ok' : 'null'}`);
     if (!state || state.playing) return;
 
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -830,28 +831,6 @@ function appendTrackToDOM(track) {
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
             body: JSON.stringify({ volume: val }),
         });
-    });
-
-    div.querySelector('.track-play-btn').addEventListener('click', () => {
-        const id = String(track.id);
-        const s = trackStates[id];
-        if (!s) return;
-        if (s.playing) {
-            stopTrack(id);
-        } else {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            playTrack(id);
-        }
-    });
-
-    div.querySelector('.track-mute-btn').addEventListener('click', () => {
-        const id = String(track.id);
-        if (trackStates[id]) { trackStates[id].muted = !trackStates[id].muted; updateAllGains(); }
-    });
-
-    div.querySelector('.track-solo-btn').addEventListener('click', () => {
-        const id = String(track.id);
-        if (trackStates[id]) { trackStates[id].solo = !trackStates[id].solo; updateAllGains(); }
     });
 
     div.querySelector('.track-delete-btn').addEventListener('click', async () => {
