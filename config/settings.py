@@ -97,6 +97,9 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 import os
 static_path = BASE_DIR / 'static'
 print(f"DEBUG static contents: {list(os.listdir(static_path))}")
+for root, dirs, files in os.walk(BASE_DIR / 'static'):
+    for file in files:
+        print(f"DEBUG file: {os.path.join(root, file)}")
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
