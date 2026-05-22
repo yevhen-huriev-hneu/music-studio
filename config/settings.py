@@ -94,6 +94,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
+print(f"DEBUG BASE_DIR: {BASE_DIR}")
+print(f"DEBUG STATICFILES_DIRS: {STATICFILES_DIRS}")
+print(f"DEBUG static exists: {(BASE_DIR / 'static').exists()}")
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
