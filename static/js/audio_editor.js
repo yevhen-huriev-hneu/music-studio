@@ -722,7 +722,14 @@ uploadBtn?.addEventListener('click', async () => {
         const emptyMsg = document.getElementById('empty-tracks');
         if (emptyMsg) emptyMsg.remove();
     } else {
-        alert('Помилка при завантаженні файлу.');
+        let msg = 'Помилка при завантаженні файлу.';
+        try {
+            const data = await resp.json();
+            if (data.error) msg += `\n\n${data.error}`;
+            else msg += `\n\n${JSON.stringify(data)}`;
+        } catch (_) {}
+        console.error('[upload] status:', resp.status, msg);
+        alert(msg);
     }
 });
 

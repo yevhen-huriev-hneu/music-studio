@@ -23,7 +23,10 @@ class TrackUploadView(APIView):
             if not track.title:
                 track.title = os.path.splitext(request.FILES['file'].name)[0]
             track.order = project.tracks.count()
-            track.save()
+            try:
+                track.save()
+            except Exception as exc:
+                return Response({'error': str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             serializer = AudioTrackSerializer(track, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
