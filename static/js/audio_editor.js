@@ -66,6 +66,11 @@ requestAnimationFrame(rafLoop);
 
 // --- Ініціалізація доріжок, що вже є на сторінці ---
 
+document.querySelectorAll('.track-play-btn').forEach(btn => {
+    btn.disabled = true;
+    btn.textContent = '...';
+});
+
 document.querySelectorAll('.track-item').forEach(item => {
     const trackId = item.dataset.trackId;
     const src = item.dataset.src;
@@ -820,6 +825,9 @@ function appendTrackToDOM(track) {
         </div>
     `;
     container.appendChild(div);
+
+    const newPlayBtn = div.querySelector('.track-play-btn');
+    if (newPlayBtn) { newPlayBtn.disabled = true; newPlayBtn.textContent = '...'; }
 
     // Підключити обробники для нової доріжки
     div.querySelector('.volume-slider').addEventListener('input', async (e) => {
