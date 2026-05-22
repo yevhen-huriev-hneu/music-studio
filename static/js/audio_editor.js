@@ -99,7 +99,15 @@ async function initTrack(trackId, src, container) {
         return;
     }
 
-    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    let audioBuffer;
+    try {
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    } catch (err) {
+        if (playBtn) { playBtn.disabled = false; playBtn.innerHTML = '&#9654;'; }
+        console.error(`[initTrack] decodeAudioData failed for track ${trackId}:`, err);
+        return;
+    }
+    console.log(`[initTrack] id=${trackId} decoded OK, duration=${audioBuffer.duration.toFixed(2)}s`);
 
     trackStates[trackId] = {
         buffer: audioBuffer,
@@ -218,12 +226,17 @@ async function initTrack(trackId, src, container) {
 
 function drawWaveform(trackId, audioBuffer) {
     const canvas = document.getElementById(`waveform-${trackId}`);
-    if (!canvas) return;
+    if (!canvas) {
+        console.warn(`[waveform] canvas not found: waveform-${trackId}`);
+        return;
+    }
 
     const ctx = canvas.getContext('2d');
     const data = audioBuffer.getChannelData(0);
-    const width = canvas.offsetWidth || 800;
-    const height = canvas.height;
+    const width = canvas.offsetWidth || canvas.clientWidth || 800;
+    const height = canvas.height || 80;
+    console.log(`[waveform] id=${trackId} ${width}x${height} samples=${data.length}`);
+    if (!width || !height) return;
     const step = Math.ceil(data.length / width);
 
     canvas.width = width;
